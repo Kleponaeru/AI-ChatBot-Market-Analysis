@@ -1,185 +1,230 @@
-let priceChart = null;
-let volumeChart = null;
-
-// Show/hide crypto-specific controls
-document.getElementById("dataType").addEventListener("change", function (e) {
-  const cryptoElements = document.querySelectorAll(".crypto-only");
-  cryptoElements.forEach((el) => {
-    el.style.display = e.target.value === "crypto" ? "block" : "none";
-  });
-});
-
-async function fetchData() {
-  const dataType = document.getElementById("dataType").value;
-  const symbol = document.getElementById("symbol").value.toUpperCase();
-  const market = document.getElementById("market").value;
-  const cacheKey = `${dataType}_${symbol}_${market}`;
-
-  // Check local storage for cached data
-  const cachedData = localStorage.getItem(cacheKey);
-  if (cachedData) {
-    updateDashboard(JSON.parse(cachedData));
-    showError("");
-    document.getElementById("dataContainer").classList.remove("hidden");
-    return;
-  }
-
-  if (!symbol) {
-    showError("Please enter a symbol");
-    return;
-  }
-
-  showLoading(true);
-  try {
-    const endpoint =
-      dataType === "crypto"
-        ? `/api/crypto/${symbol}/${market}`
-        : `/api/stock/${symbol}`;
-
-    const response = await fetch(endpoint);
-    if (!response.ok) {
-      throw new Error("Failed to fetch data");
-    }
-
-    const data = await response.json();
-    console.log("Fetched data:", data); // Log the fetched data for debugging
-
-    // Cache the data in local storage
-    localStorage.setItem(cacheKey, JSON.stringify(data));
-
-    updateDashboard(data);
-    showError("");
-    document.getElementById("dataContainer").classList.remove("hidden");
-  } catch (error) {
-    showError("Error fetching data: " + error.message);
-    document.getElementById("dataContainer").classList.add("hidden");
-  } finally {
-    showLoading(false);
-  }
-}
-
-function updateDashboard(data) {
-  // Ensure data has necessary properties
-  if (
-    !data ||
-    !data.daily_data ||
-    !Array.isArray(data.daily_data) ||
-    data.daily_data.length === 0
-  ) {
-    showError("Invalid data format received from API.");
-    return;
-  }
-
-  // Handle the exchange rate data
-  const exchangeRateData = data.exchange_rate;
-
-  // Check if exchange_rate is null
-  if (exchangeRateData === null || !exchangeRateData.exchange_rate) {
-    showError("Exchange rate data is currently unavailable.");
-    console.log("Exchange Rate Data is null or missing");
-    document.getElementById("currentPrice").textContent = "-";
-    document.getElementById("volume").textContent = "-";
-    document.getElementById("highPrice").textContent = "-";
-    document.getElementById("lowPrice").textContent = "-";
-    return; // Exit the function early
-  }
-
-  // Extract current price from the exchange rate data
-  const currentPriceRaw = exchangeRateData.exchange_rate; // Accessing the correct property
-  const currentPrice = parseFloat(currentPriceRaw) || "-"; // Use parseFloat to convert to number
-
-  // Extract the latest entry for volume, high, and low prices
-  const latestData = data.daily_data[data.daily_data.length - 1]; // Most recent data point
-  const volume = latestData.volume || "-"; // Default to "-" if undefined
-  const highPrice = latestData.high || "-"; // Default to "-" if undefined
-  const lowPrice = latestData.low || "-"; // Default to "-" if undefined
-
-  // Log extracted values for debugging
-  console.log("Current Price:", currentPrice);
-  console.log("High Price:", highPrice);
-  console.log("Low Price:", lowPrice);
-  console.log("Volume:", volume);
-
-  // Update stats text
-  document.getElementById("currentPrice").textContent =
-    currentPrice === "-" ? "-" : formatPrice(currentPrice);
-  document.getElementById("volume").textContent =
-    volume === "-" ? "-" : formatVolume(volume);
-  document.getElementById("highPrice").textContent =
-    highPrice === "-" ? "-" : formatPrice(highPrice);
-  document.getElementById("lowPrice").textContent =
-    lowPrice === "-" ? "-" : formatPrice(lowPrice);
-
-  // Calculate and update price change only if current price is valid
-  const priceChange = currentPrice !== "-" ? calculatePriceChange(data) : 0;
-  const priceChangeElement = document.getElementById("priceChange");
-  priceChangeElement.textContent =
-    currentPrice === "-" ? "-" : formatPriceChange(priceChange);
-  priceChangeElement.className =
-    currentPrice === "-"
-      ? "stat-change"
-      : `stat-change ${priceChange >= 0 ? "positive" : "negative"}`;
-}
-
-function calculatePriceChange(data) {
-  const currentPrice = parseFloat(data.exchange_rate?.exchange_rate) || 0; // Updated to handle case where exchange_rate is null
-  const previousPrice = 0; // You may want to implement fetching historical data for comparison
-  if (previousPrice === 0) {
-    return 0; // Avoid division by zero
-  }
-  return ((currentPrice - previousPrice) / previousPrice) * 100;
-}
-
-// Utility functions
-function formatPrice(price) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(price);
-}
-
-function formatPriceChange(change) {
-  const sign = change >= 0 ? "+" : "";
-  return `${sign}${change.toFixed(2)}%`;
-}
-
-function formatVolume(volume) {
-  return new Intl.NumberFormat("en-US", {
-    notation: "compact",
-    compactDisplay: "short",
-  }).format(volume);
-}
-
-function showError(message) {
-  const errorElement = document.getElementById("errorMessage");
-  errorElement.textContent = message;
-  errorElement.style.display = message ? "block" : "none";
-}
-
-function showLoading(show) {
-  document.getElementById("loading").style.display = show ? "flex" : "none";
-}
-
-// Initialize timeframe buttons
-document.querySelectorAll(".timeframe-button").forEach((button) => {
+// Tab switching
+document.querySelectorAll(".tab-button").forEach((button) => {
   button.addEventListener("click", () => {
+    // Remove active class from all tabs
     document
-      .querySelectorAll(".timeframe-button")
+      .querySelectorAll(".tab-button")
       .forEach((btn) => btn.classList.remove("active"));
+    document
+      .querySelectorAll(".tab-content")
+      .forEach((content) => content.classList.remove("active"));
+
+    // Add active class to clicked tab
     button.classList.add("active");
-    fetchData(); // Refetch data with new timeframe
+    document.getElementById(button.dataset.tab).classList.add("active");
   });
 });
 
-const mockData = {
-  daily_data: [
-    { volume: 3500, high: 73835.57, low: 35633 },
-    // More data points if needed...
-  ],
-  exchange_rate: {
-    exchange_rate: "69329.19",
-    from_currency: "BTC",
-    to_currency: "USD",
-  },
-};
-updateDashboard(mockData);
+function toggleCurrencySelect() {
+  const dataType = document.getElementById("dataType").value; // Get selected data type
+  const currencySelect = document.getElementById("currency"); // Get currency select element
+
+  if (dataType === "stock") {
+    currencySelect.style.display = "none"; // Hide currency select for stocks
+  } else {
+    currencySelect.style.display = "inline"; // Show currency select for cryptocurrencies
+  }
+}
+
+// Initial call to set visibility on page load based on default selection
+document.addEventListener("DOMContentLoaded", () => {
+  toggleCurrencySelect();
+});
+
+//Market data
+const BASE_URL = "http://127.0.0.1:5000"; // Ensure your BASE_URL is defined
+
+function fetchMarketData() {
+  const dataType = document.getElementById("dataType").value; // crypto or stock
+  const symbol = document.querySelector('input[type="text"]').value.trim(); // symbol input
+  const currency = document.getElementById("currency").value; // currency input
+
+  // Validate input
+  if (!symbol) {
+    alert("Please enter a symbol.");
+    return;
+  }
+
+  // Define the API endpoint based on the selected data type
+  let endpoint = "";
+  if (dataType === "crypto") {
+    endpoint = `${BASE_URL}/api/crypto/${symbol}/${currency}`; // For cryptocurrency data
+  } else if (dataType === "stock") {
+    endpoint = `${BASE_URL}/api/stock/${symbol}`; // For stock data
+  }
+
+  console.log("Fetching data from:", endpoint); // Log the endpoint for debugging
+
+  // Fetch market data from the API
+  fetch(endpoint)
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(
+          "Network response was not ok, Status: " + response.status
+        );
+      }
+      return response.json();
+    })
+    .then((data) => {
+      // Log the entire response data for debugging
+      console.log("Response Data:", data);
+
+      // Check if the data structure is what we expect
+      if (dataType === "crypto" && !data.daily_data) {
+        throw new Error(
+          "Unexpected response structure for cryptocurrency data."
+        );
+      } else if (dataType === "stock" && !data.stock_data) {
+        throw new Error("Unexpected response structure for stock data.");
+      }
+
+      // Handle the market data response
+      displayMarketData(data, dataType); // Call your display function to handle the data
+    })
+    .catch((error) => {
+      console.error("Error:", error);
+      alert("Failed to fetch market data. Please try again.");
+    });
+}
+
+function displayMarketData(data, dataType) {
+  const marketDataContainer = document.getElementById("marketData");
+  marketDataContainer.innerHTML = ""; // Clear previous data
+
+  if (dataType === "crypto") {
+    // Create a table for cryptocurrency data
+    const table = document.createElement("table");
+    table.className = "market-table";
+
+    // Create table header
+    const headerRow = document.createElement("tr");
+    const headers = ["Date", "Open", "High", "Low", "Close", "Volume"];
+    headers.forEach((header) => {
+      const th = document.createElement("th");
+      th.innerText = header;
+      headerRow.appendChild(th);
+    });
+    table.appendChild(headerRow);
+
+    // Populate table rows with daily data
+    data.daily_data.forEach((entry) => {
+      const row = document.createElement("tr");
+      // Ensure each entry has the required properties
+      const open = entry.open !== undefined ? entry.open.toFixed(2) : "N/A";
+      const high = entry.high !== undefined ? entry.high.toFixed(2) : "N/A";
+      const low = entry.low !== undefined ? entry.low.toFixed(2) : "N/A";
+      const close = entry.close !== undefined ? entry.close.toFixed(2) : "N/A";
+      const volume =
+        entry.volume !== undefined ? entry.volume.toFixed(2) : "N/A";
+
+      row.innerHTML = `
+          <td>${entry.index}</td>
+          <td>${open}</td>
+          <td>${high}</td>
+          <td>${low}</td>
+          <td>${close}</td>
+          <td>${volume}</td>
+        `;
+      table.appendChild(row);
+    });
+
+    // Display exchange rate
+    const exchangeRate = document.createElement("div");
+    exchangeRate.innerText = `Exchange Rate: ${data.exchange_rate.from_currency} to ${data.exchange_rate.to_currency}: ${data.exchange_rate.exchange_rate}`;
+
+    marketDataContainer.appendChild(exchangeRate);
+    marketDataContainer.appendChild(table);
+  } else if (dataType === "stock") {
+    // Create a table for stock data
+    const table = document.createElement("table");
+    table.className = "market-table";
+
+    // Create table header
+    const headerRow = document.createElement("tr");
+    const headers = ["Date", "Open", "High", "Low", "Close", "Volume"];
+    headers.forEach((header) => {
+      const th = document.createElement("th");
+      th.innerText = header;
+      headerRow.appendChild(th);
+    });
+    table.appendChild(headerRow);
+
+    // Populate table rows with stock data
+    data.stock_data.forEach((entry) => {
+      const row = document.createElement("tr");
+      // Ensure each entry has the required properties
+      const open = entry.open !== undefined ? entry.open.toFixed(2) : "N/A";
+      const high = entry.high !== undefined ? entry.high.toFixed(2) : "N/A";
+      const low = entry.low !== undefined ? entry.low.toFixed(2) : "N/A";
+      const close = entry.close !== undefined ? entry.close.toFixed(2) : "N/A";
+      const volume =
+        entry.volume !== undefined ? entry.volume.toFixed(2) : "N/A";
+
+      row.innerHTML = `
+          <td>${entry.index}</td>
+          <td>${open}</td>
+          <td>${high}</td>
+          <td>${low}</td>
+          <td>${close}</td>
+          <td>${volume}</td>
+        `;
+      table.appendChild(row);
+    });
+
+    marketDataContainer.appendChild(table);
+  } else {
+    console.error("Unexpected data type:", dataType);
+    alert("Unexpected data type received.");
+  }
+}
+
+// Chat functionality
+const chatMessages = document.getElementById("chatMessages");
+const chatInput = document.getElementById("chatInput");
+const md = new markdownit();
+
+function addMessage(message, isUser = true) {
+  const messageDiv = document.createElement("div");
+  messageDiv.className = `message ${isUser ? "user" : "bot"}`;
+
+  // Use markdown-it to convert Markdown to HTML
+  messageDiv.innerHTML = md.render(message);
+
+  chatMessages.appendChild(messageDiv);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function sendMessage() {
+  const message = chatInput.value.trim();
+  if (message) {
+    // Add the user's message to the chat
+    addMessage(message, true);
+    chatInput.value = "";
+
+    // Send the user's message to the backend
+    fetch("/chatbot", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ question: message }), // Use the user input here
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        // Display the chatbot's response
+        addMessage(data.response, false);
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        // Optionally, show an error message in the chat
+        addMessage("Error: Unable to get response from the chatbot.", false);
+      });
+  }
+}
+
+// Handle Enter key in chat input
+chatInput.addEventListener("keypress", (e) => {
+  if (e.key === "Enter") {
+    sendMessage();
+  }
+});
