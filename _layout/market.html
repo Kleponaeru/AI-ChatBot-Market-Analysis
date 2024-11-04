@@ -1,0 +1,19 @@
+<div id="market" class="tab-content active">
+    <div class="market-controls">
+        <select id="dataType" onchange="toggleCurrencySelect()">
+            <option value="crypto">Cryptocurrency</option>
+            <option value="stock">Stocks</option>
+        </select>
+        <input class="long-input" type="text" placeholder="Enter symbol (e.g., BTC, AAPL)">
+        <select id="currency">
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+            <option value="GBP">GBP</option>
+        </select>
+        <button onclick="fetchMarketData()">
+          <i class="fa-solid fa-magnifying-glass"></i></button>
+    </div>
+    <div id="marketData">
+        <!-- Market data will be populated here -->
+    </div>
+</div>

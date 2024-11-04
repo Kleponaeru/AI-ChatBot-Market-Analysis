@@ -1,19 +1,19 @@
 // Tab switching
-document.querySelectorAll(".tab-button").forEach((button) => {
-  button.addEventListener("click", () => {
-    // Remove active class from all tabs
-    document
-      .querySelectorAll(".tab-button")
-      .forEach((btn) => btn.classList.remove("active"));
-    document
-      .querySelectorAll(".tab-content")
-      .forEach((content) => content.classList.remove("active"));
+// document.querySelectorAll(".tab-button").forEach((button) => {
+//   button.addEventListener("click", () => {
+//     // Remove active class from all tabs
+//     document
+//       .querySelectorAll(".tab-button")
+//       .forEach((btn) => btn.classList.remove("active"));
+//     document
+//       .querySelectorAll(".tab-content")
+//       .forEach((content) => content.classList.remove("active"));
 
-    // Add active class to clicked tab
-    button.classList.add("active");
-    document.getElementById(button.dataset.tab).classList.add("active");
-  });
-});
+//     // Add active class to clicked tab
+//     button.classList.add("active");
+//     document.getElementById(button.dataset.tab).classList.add("active");
+//   });
+// });
 
 function toggleCurrencySelect() {
   const dataType = document.getElementById("dataType").value; // Get selected data type
@@ -201,6 +201,18 @@ function sendMessage() {
     addMessage(message, true);
     chatInput.value = "";
 
+    // Create and display the loading indicator
+    const loadingIndicator = `
+          <div class="message bot loading-indicator">
+              <div class="dots">
+                  <div class="dot"></div>
+                  <div class="dot"></div>
+                  <div class="dot"></div>
+              </div>
+          </div>`;
+    const chatMessages = document.getElementById("chatMessages");
+    chatMessages.insertAdjacentHTML("beforeend", loadingIndicator);
+
     // Send the user's message to the backend
     fetch("/chatbot", {
       method: "POST",
@@ -211,11 +223,22 @@ function sendMessage() {
     })
       .then((response) => response.json())
       .then((data) => {
+        // Remove loading indicator
+        const loadingMessage = chatMessages.querySelector(".loading-indicator");
+        if (loadingMessage) {
+          chatMessages.removeChild(loadingMessage);
+        }
+
         // Display the chatbot's response
         addMessage(data.response, false);
       })
       .catch((error) => {
         console.error("Error:", error);
+        // Remove loading indicator
+        const loadingMessage = chatMessages.querySelector(".loading-indicator");
+        if (loadingMessage) {
+          chatMessages.removeChild(loadingMessage);
+        }
         // Optionally, show an error message in the chat
         addMessage("Error: Unable to get response from the chatbot.", false);
       });
@@ -228,3 +251,77 @@ chatInput.addEventListener("keypress", (e) => {
     sendMessage();
   }
 });
+
+// Function to populate quick replies
+function populateQuickReplies() {
+  const quickReplies = document.getElementById("quickReplies");
+  const replies = [
+      "Hello",
+      "Can you help me?",
+      "Make me short essay",
+      "Tell me a joke"
+  ];
+
+  // Clear existing replies
+  quickReplies.innerHTML = '';
+
+  replies.forEach(reply => {
+      const button = document.createElement("button");
+      button.textContent = reply;
+      button.className = "quick-reply-btn";
+      button.onclick = () => sendQuickReply(reply);
+      quickReplies.appendChild(button);
+  });
+}
+
+// Function to send quick replies
+function sendQuickReply(reply) {
+  // Add the quick reply to the chat
+  addMessage(reply, true);
+
+  // Create and display the loading indicator
+  const loadingIndicator = `
+      <div class="message bot loading-indicator">
+          <div class="dots">
+              <div class="dot"></div>
+              <div class="dot"></div>
+              <div class="dot"></div>
+          </div>
+      </div>`;
+  const chatMessages = document.getElementById("chatMessages");
+  chatMessages.insertAdjacentHTML('beforeend', loadingIndicator);
+
+  // Send the quick reply to the backend
+  fetch("/chatbot", {
+      method: "POST",
+      headers: {
+          "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ question: reply }), // Use the quick reply here
+  })
+  .then((response) => response.json())
+  .then((data) => {
+      // Remove loading indicator
+      const loadingMessage = chatMessages.querySelector('.loading-indicator');
+      if (loadingMessage) {
+          chatMessages.removeChild(loadingMessage);
+      }
+
+      // Display the chatbot's response
+      addMessage(data.response, false);
+  })
+  .catch((error) => {
+      console.error("Error:", error);
+      // Remove loading indicator
+      const loadingMessage = chatMessages.querySelector('.loading-indicator');
+      if (loadingMessage) {
+          chatMessages.removeChild(loadingMessage);
+      }
+      // Optionally, show an error message in the chat
+      addMessage("Error: Unable to get response from the chatbot.", false);
+  });
+}
+
+// Call populateQuickReplies to initialize the quick replies when the chat loads
+populateQuickReplies();
+

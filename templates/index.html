@@ -11,13 +11,15 @@
 
 </head>
 <body>
+    <div id="sidebar"></div>
     <div class="container">
-        <div class="tabs">
+        <h1 class="" style="text-align: center; margin-bottom: 14px;" >CHAT BOT</h1>
+        <!-- <div class="tabs">
             <button class="tab-button active" data-tab="market">Market Data</button>
             <button class="tab-button" data-tab="chat">Chatbot</button>
-        </div>
+        </div> -->
 
-        <div id="market" class="tab-content active">
+        <!-- <div id="market" class="tab-content active">
             <div class="market-controls">
                 <select id="dataType" onchange="toggleCurrencySelect()">
                     <option value="crypto">Cryptocurrency</option>
@@ -33,23 +35,45 @@
                   <i class="fa-solid fa-magnifying-glass"></i></button>
             </div>
             <div id="marketData">
-                <!-- Market data will be populated here -->
             </div>
-        </div>
+        </div> -->
 
-        <div id="chat" class="tab-content">
+        <div id="chat" class="tab-content" style="display: block;">
             <div class="chat-container">
                 <div class="chat-messages" id="chatMessages">
-                    <!-- Messages will be populated here -->
+                    <!-- Example of a bot message with loading indicator -->
+                    <!-- This will be dynamically added by JavaScript -->
+                </div>
+                <div class="quick-replies" id="quickReplies">
+                    <!-- Quick reply buttons will be dynamically populated here -->
                 </div>
                 <div class="chat-input-container">
-                    <input type="text" class="chat-input" id="chatInput" placeholder="Type a message...">
-                    <button class="chat-send-btn" onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
+                    <input type="text" class="chat-input" id="chatInput" placeholder="Type a message..." />
+                    <button class="chat-send-btn" onclick="sendMessage()">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
                 </div>
             </div>
         </div>
+              
     </div>
 
     <script src="{{ url_for('static', filename='app.js') }}"></script>
+    <script>
+        // Fetch the sidebar HTML and insert it into the sidebar div
+        fetch('http://localhost:8000/_layout/sidebar.html')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok ' + response.statusText);
+                }
+                return response.text();
+            })
+            .then(html => {
+                document.getElementById('sidebar').innerHTML = html;
+            })
+            .catch(error => {
+                console.error('There was a problem with the fetch operation:', error);
+            });
+    </script>
 </body>
 </html>

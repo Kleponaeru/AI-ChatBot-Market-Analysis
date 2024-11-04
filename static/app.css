@@ -13,6 +13,11 @@
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
+h1 {
+  font-family: Arial, Helvetica, sans-serif;
+  color: #9b9ba4;
+}
+
 body {
   background-color: var(--background);
   color: var(--text);
@@ -219,6 +224,30 @@ body {
   .chat-send-btn {
     flex-shrink: 0;
   }
+  h1 {
+    font-size: 1.5rem; /* Adjust heading size */
+  }
+
+  .chat-input {
+    font-size: 14px; /* Ensure input text is readable */
+  }
+
+  .loading-indicator {
+    font-size: 14px; /* Adjust loading text size */
+  }
+}
+
+.chat-messages > div {
+  opacity: 0; /* Start hidden */
+  transform: translateY(10px); /* Start slightly lower */
+  animation: fadeInUp 0.5s forwards; /* Apply animation */
+}
+
+@keyframes fadeInUp {
+  to {
+    opacity: 1; /* Fade in */
+    transform: translateY(0); /* Move to original position */
+  }
 }
 
 /* Market Show Data */
@@ -246,4 +275,86 @@ body {
 
 .market-table tr:hover {
   background-color: #f1f1f1;
+}
+
+.market-controls button,
+.chat-send-btn {
+  transition: background-color 0.2s, transform 0.2s;
+}
+
+.market-controls button:active,
+.chat-send-btn:active {
+  transform: scale(0.95); /* Slightly shrink button on click */
+}
+
+.loading-indicator {
+  font-style: italic;
+  color: #979797;
+  margin: 0; /* Remove margin to fit within the bubble */
+  text-align: left; /* Align text left for better readability */
+  font-size: 14px; /* Slightly smaller font size */
+  display: flex; /* Use flexbox for alignment */
+  align-items: center; /* Center items vertically */
+  gap: 5px; /* Space between text and dots */
+}
+
+.loading-indicator .dots {
+  display: flex; /* Align dots horizontally */
+  gap: 4px; /* Space between dots */
+}
+
+.loading-indicator .dot {
+  width: 8px; /* Adjusted size for dots */
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--primary);
+  animation: dotFlashing 1s infinite; /* Animate the dots */
+}
+
+/* Adding delay for each dot to create a sequential effect */
+.loading-indicator .dot:nth-child(2) {
+  animation-delay: 0.2s; /* Delay for the second dot */
+}
+
+.loading-indicator .dot:nth-child(3) {
+  animation-delay: 0.4s; /* Delay for the third dot */
+}
+
+/* Keyframes for dot-flashing effect */
+@keyframes dotFlashing {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.5);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.quick-replies {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 8px 4px;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.quick-replies::-webkit-scrollbar {
+  display: none;
+}
+
+.quick-reply-btn {
+  white-space: nowrap;
+  flex-shrink: 0;
+  padding: 8px 16px;
+  background: #0095ff;
+  border-radius: 20px;
+  color: white;
+}
+
+.quick-reply-btn:hover {
+  background-color: #1a8cd8; /* Slightly darker on hover */
 }
