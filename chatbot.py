@@ -1,7 +1,14 @@
 import requests
 import json
+from dotenv import load_dotenv
+import os
 
-API_KEY = "AIzaSyC55XEtpoK5KvHgoL6p4o0GuZYGubpWVW0"
+load_dotenv()
+api_key = os.getenv('GEMINI_API_KEY')
+if not api_key:
+    raise ValueError("API key not found")
+
+print(api_key)  # Optional: just to verify it's working
 ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent"
 
 # Maintain a conversation history
@@ -31,7 +38,7 @@ def chatbot_response(user_input):
         
         # Make the request to Gemini
         response = requests.post(
-            f"{ENDPOINT}?key={API_KEY}",
+            f"{ENDPOINT}?key={api_key}",
             headers=headers,
             data=json.dumps(payload)
         )
