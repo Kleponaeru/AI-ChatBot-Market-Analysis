@@ -358,3 +358,17 @@ body {
 .quick-reply-btn:hover {
   background-color: #1a8cd8; /* Slightly darker on hover */
 }
+
+.file-upload-label {
+  cursor: pointer;
+  margin-right: 0.5rem; /* Space between the icon and input */
+}
+
+.file-upload-label i {
+  font-size: 1.5rem; /* Size of the attachment icon */
+  color: var(--primary); /* Adjust color as needed */
+}
+
+.file-input {
+  display: none; /* Hide the default file input */
+}

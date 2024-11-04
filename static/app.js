@@ -256,21 +256,21 @@ chatInput.addEventListener("keypress", (e) => {
 function populateQuickReplies() {
   const quickReplies = document.getElementById("quickReplies");
   const replies = [
-      "Hello",
-      "Can you help me?",
-      "Make me short essay",
-      "Tell me a joke"
+    "Hello",
+    "Can you help me?",
+    "Make me short essay",
+    "Tell me a joke",
   ];
 
   // Clear existing replies
-  quickReplies.innerHTML = '';
+  quickReplies.innerHTML = "";
 
-  replies.forEach(reply => {
-      const button = document.createElement("button");
-      button.textContent = reply;
-      button.className = "quick-reply-btn";
-      button.onclick = () => sendQuickReply(reply);
-      quickReplies.appendChild(button);
+  replies.forEach((reply) => {
+    const button = document.createElement("button");
+    button.textContent = reply;
+    button.className = "quick-reply-btn";
+    button.onclick = () => sendQuickReply(reply);
+    quickReplies.appendChild(button);
   });
 }
 
@@ -289,39 +289,111 @@ function sendQuickReply(reply) {
           </div>
       </div>`;
   const chatMessages = document.getElementById("chatMessages");
-  chatMessages.insertAdjacentHTML('beforeend', loadingIndicator);
+  chatMessages.insertAdjacentHTML("beforeend", loadingIndicator);
 
   // Send the quick reply to the backend
   fetch("/chatbot", {
-      method: "POST",
-      headers: {
-          "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ question: reply }), // Use the quick reply here
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ question: reply }), // Use the quick reply here
   })
-  .then((response) => response.json())
-  .then((data) => {
+    .then((response) => response.json())
+    .then((data) => {
       // Remove loading indicator
-      const loadingMessage = chatMessages.querySelector('.loading-indicator');
+      const loadingMessage = chatMessages.querySelector(".loading-indicator");
       if (loadingMessage) {
-          chatMessages.removeChild(loadingMessage);
+        chatMessages.removeChild(loadingMessage);
       }
 
       // Display the chatbot's response
       addMessage(data.response, false);
-  })
-  .catch((error) => {
+    })
+    .catch((error) => {
       console.error("Error:", error);
       // Remove loading indicator
-      const loadingMessage = chatMessages.querySelector('.loading-indicator');
+      const loadingMessage = chatMessages.querySelector(".loading-indicator");
       if (loadingMessage) {
-          chatMessages.removeChild(loadingMessage);
+        chatMessages.removeChild(loadingMessage);
       }
       // Optionally, show an error message in the chat
       addMessage("Error: Unable to get response from the chatbot.", false);
-  });
+    });
 }
 
 // Call populateQuickReplies to initialize the quick replies when the chat loads
 populateQuickReplies();
 
+// Function to handle file upload
+function handleFileUpload(input) {
+  const file = input.files[0]; // Get the first selected file
+  if (file) {
+    // Create a FormData object to send the file
+    const formData = new FormData();
+    formData.append("file", file); // Append the file to the FormData
+
+    // Create and display the loading indicator
+    const loadingIndicator = `
+      <div class="message bot loading-indicator">
+          <div class="dots">
+              <div class="dot"></div>
+              <div class="dot"></div>
+              <div class="dot"></div>
+          </div>
+      </div>`;
+    const chatMessages = document.getElementById("chatMessages");
+    chatMessages.insertAdjacentHTML("beforeend", loadingIndicator);
+
+    // Send the file to the server using fetch
+    fetch("/upload", {
+      method: "POST",
+      body: formData,
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(
+            "Network response was not ok, Status: " + response.status
+          );
+        }
+        return response.json();
+      })
+      .then((data) => {
+        // Remove loading indicator
+        const loadingMessage = chatMessages.querySelector(".loading-indicator");
+        if (loadingMessage) {
+          chatMessages.removeChild(loadingMessage);
+        }
+
+        // Handle success response from the server
+        console.log("File uploaded successfully:", data);
+        // Append success message to chat
+        appendMessage(`File uploaded: ${file.name}`, "bot");
+      })
+      .catch((error) => {
+        // Remove loading indicator
+        const loadingMessage = chatMessages.querySelector(".loading-indicator");
+        if (loadingMessage) {
+          chatMessages.removeChild(loadingMessage);
+        }
+
+        // Handle any errors during the upload
+        console.error("Error uploading file:", error);
+        appendMessage("Error uploading file. Please try again.", "bot");
+        console.log([...formData]); // Log the FormData entries
+
+      });
+  } else {
+    appendMessage("No file selected. Please select a file to upload.", "bot");
+  }
+}
+
+// Function to append messages to the chat
+function appendMessage(message, sender) {
+  const chatMessages = document.getElementById("chatMessages");
+  const messageElement = document.createElement("div");
+  messageElement.className = `message ${sender}`;
+  messageElement.textContent = message;
+  chatMessages.appendChild(messageElement);
+  chatMessages.scrollTop = chatMessages.scrollHeight; // Auto-scroll to the latest message
+}
